@@ -3,6 +3,8 @@ import { ref } from "vue";
 import Message from "@/components/Message.vue";
 import { onMounted } from "vue";
 import { nextTick } from "vue";
+import type { VForm } from "vuetify/lib/components/index";
+import { chatInputRules } from "@/types/rules";
 
 const chats = ref([
   {
@@ -90,11 +92,17 @@ const messagesScroll = ref<HTMLDivElement | null>(null);
 
 const message = ref("");
 
+const chatForm = ref<VForm | null>(null);
+
 function scrollToBottom() {
   messagesScroll.value?.scrollTo(0, messagesScroll.value.scrollHeight);
 }
 
-function sendMessage() {
+async function sendMessage() {
+  const validated = await chatForm.value?.validate();
+
+  if (!validated?.valid) return;
+
   messages.value.push({
     message: message.value,
     byOwner: true,
@@ -144,7 +152,11 @@ onMounted(() => {
               </div>
             </div>
           </div>
-          <div class="bg-grey-lighten-3 pa-2 chat-input">
+          <v-form
+            class="bg-grey-lighten pa-2 chat-input"
+            @submit.prevent="sendMessage"
+            ref="chatForm"
+          >
             <v-btn icon="mdi-paperclip"></v-btn>
             <v-text-field
               v-model="message"
@@ -152,9 +164,15 @@ onMounted(() => {
               variant="solo"
               hide-details
               placeholder="Type a message"
+              :rules="chatInputRules"
             ></v-text-field>
-            <v-btn color="primary" icon="mdi-send" @click="sendMessage"></v-btn>
-          </div>
+            <v-btn
+              :disabled="!message"
+              type="submit"
+              color="primary"
+              icon="mdi-send"
+            ></v-btn>
+          </v-form>
         </v-sheet>
       </v-col>
     </v-row>
